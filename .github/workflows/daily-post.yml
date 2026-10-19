@@ -1,8 +1,8 @@
-name: 毎日のThreads投稿案をメールで確認
+name: 毎日のThreads投稿案
 
 on:
   schedule:
-    # 毎日19:00 JST（10:00 UTC）に投稿案を作成
+    # 毎日19:00 JST（10:00 UTC）に投稿案だけ作成
     - cron: "0 10 * * *"
   workflow_dispatch:
 
@@ -20,38 +20,4 @@ jobs:
         with:
           python-version: "3.12"
       - name: 今日の投稿案を作成
-        run: python draft_post.py > draft.md
-      - name: 投稿案をGmailで送信
-        env:
-          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-        run: |
-          python - <<'PY'
-          import os
-          import smtplib
-          import ssl
-          from email.message import EmailMessage
-          from pathlib import Path
-
-          address = os.environ.get("GMAIL_ADDRESS", "").strip()
-          password = os.environ.get("GMAIL_APP_PASSWORD", "").replace(" ", "")
-          if not address or not password:
-              raise SystemExit("GitHub SecretsにGMAIL_ADDRESSとGMAIL_APP_PASSWORDを設定してください。")
-
-          message = EmailMessage()
-          message["Subject"] = "【Threads投稿案】内容確認お願いします"
-          message["From"] = address
-          message["To"] = address
-          message.set_content(
-              Path("draft.md").read_text(encoding="utf-8")
-              + "\n\n公開する場合は、次のGitHub画面から投稿文を確認して手動で実行してください。\n"
-              + "https://github.com/shunhata1989/threads-auto-post/actions/workflows/publish-post.yml\n\n"
-              + "このメールを受け取っただけではThreadsに投稿されません。"
-          )
-
-          with smtplib.SMTP_SSL(
-              "smtp.gmail.com", 465, context=ssl.create_default_context()
-          ) as server:
-              server.login(address, password)
-              server.send_message(message)
-          PY
+        run: python draft_post.py
