@@ -2,6 +2,7 @@
 
 import json
 import os
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -14,8 +15,12 @@ def api_request(method, path, params=None):
     headers = {"Authorization": f"Bearer {token}"}
     data = urllib.parse.urlencode(params).encode() if params is not None else None
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.loads(response.read().decode())
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return json.loads(response.read().decode())
+    except urllib.error.HTTPError as error:
+        details = error.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Threads API returned HTTP {error.code}: {details}") from error
 
 
 def main():
