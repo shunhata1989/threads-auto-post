@@ -44,7 +44,7 @@ def main():
     start = datetime(2026, 10, 20).date()
     workdays_elapsed = sum(
         1 for offset in range((today - start).days)
-        if (start + timedelta(days=offset)).weekday() < 5
+        if (start + timedelta(days=offset)).weekday() in (0, 1, 3, 4)
     )
     post = POSTS[workdays_elapsed % len(POSTS)]
     print("## 今日のThreads投稿案")
