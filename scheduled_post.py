@@ -8,7 +8,7 @@ from draft_post import POSTS
 from main import main as publish
 
 POST_DAYS = {0, 1, 3, 4, 6}  # Monday, Tuesday, Thursday, Friday, Sunday
-START_DATE = date(2026, 10, 25)
+START_DATE = date(2026, 10, 23)
 
 # Threads image posts use JPEG photos here. The other uploaded HEIC/WEBP files
 # stay in the repository but are not selected by the automatic publisher.
@@ -54,7 +54,7 @@ SUNDAY_POSTS = [
 def main():
     today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
     if today < START_DATE:
-        print("自動投稿は10月25日（日）から開始します。")
+        print("自動投稿は10月23日（金）から開始します。")
         return
 
     if today.weekday() not in POST_DAYS:
