@@ -1,9 +1,8 @@
-"""Prepare one of 30 distinct Threads drafts; never publish them."""
+"""Prepare one of 31 distinct Threads drafts; never publish them."""
 
 from datetime import datetime, timedelta
 import os
 from zoneinfo import ZoneInfo
-
 
 POSTS = [
     "バーの店員目線で思うのは、お酒に詳しくなくても大丈夫ということ。『甘めがいい』『すっきりしたものがいい』くらいでも、選ぶヒントになります😊",
@@ -36,6 +35,7 @@ POSTS = [
     "BarEnd.ではカラオケやゲームも楽しめます🎮 飲みながら遊ぶなら、カラオケとゲームどっちが好きですか？",
     "一人でゆっくり飲む夜と、みんなで盛り上がる夜。どちらもいいですよね。今夜の気分はどっちですか？",
     "名古屋栄エリアにあるBarEnd.です！初めての方もお一人様も歓迎しております🙌 皆さんはバーに行くなら何曜日が多いですか？",
+    "名古屋栄のBarEnd.は日曜日も営業しています。日曜にゆっくり飲みたい方も、お待ちしています😊",
 ]
 
 
