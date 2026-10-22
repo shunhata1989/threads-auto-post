@@ -7,6 +7,14 @@ on:
         description: 確認して公開する投稿文を入力
         required: true
         type: string
+      image_url:
+        description: 写真を使う場合、誰でも見られるHTTPS画像URL（文章だけなら空欄）
+        required: false
+        type: string
+      alt_text:
+        description: 写真の内容説明（任意）
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -21,8 +29,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: 入力された投稿文をThreadsに公開
+      - name: 確認した文章と写真をThreadsに公開
         run: python main.py
         env:
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
           POST_TEXT: ${{ inputs.post_text }}
+          IMAGE_URL: ${{ inputs.image_url }}
+          ALT_TEXT: ${{ inputs.alt_text }}
