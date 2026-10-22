@@ -7,10 +7,51 @@ on:
         description: 確認して公開する投稿文を入力
         required: true
         type: string
-      image_url:
-        description: 写真を使う場合、誰でも見られるHTTPS画像URL（文章だけなら空欄）
-        required: false
-        type: string
+      image_file:
+        description: 写真を1枚選択（文章だけなら写真なし）
+        required: true
+        type: choice
+        default: 写真なし
+        options:
+          - 写真なし
+          - 4801034125978605363.20c975eb8212b91e54dc0136225cac20.22100120.JPG
+          - IMG_0993.JPG
+          - IMG_3566.JPG
+          - IMG_3567.JPG
+          - IMG_3568.JPG
+          - IMG_3569.JPG
+          - IMG_3570.JPG
+          - IMG_3571.JPG
+          - IMG_3572.JPG
+          - IMG_3573.JPG
+          - IMG_3574.JPG
+          - IMG_3575.JPG
+          - IMG_3576.JPG
+          - IMG_3577.JPG
+          - IMG_3578.JPG
+          - IMG_3579.JPG
+          - IMG_3580.JPG
+          - IMG_3581.JPG
+          - IMG_3582.JPG
+          - IMG_3585.JPG
+          - IMG_3587.JPG
+          - IMG_3589.JPG
+          - IMG_3590.JPG
+          - IMG_3592.JPG
+          - IMG_3593.JPG
+          - IMG_3594.JPG
+          - IMG_5614.WEBP
+          - IMG_5615.WEBP
+          - IMG_5616.WEBP
+          - 'IMG_5617 2.WEBP'
+          - IMG_5618.WEBP
+          - IMG_5619.WEBP
+          - IMG_5620.WEBP
+          - IMG_7091.HEIC
+          - IMG_7143.JPG
+          - IMG_7144.JPG
+          - IMG_7331.HEIC
+          - IMG_9917.HEIC
       alt_text:
         description: 写真の内容説明（任意）
         required: false
@@ -34,5 +75,5 @@ jobs:
         env:
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
           POST_TEXT: ${{ inputs.post_text }}
-          IMAGE_URL: ${{ inputs.image_url }}
+          IMAGE_FILE: ${{ inputs.image_file }}
           ALT_TEXT: ${{ inputs.alt_text }}
