@@ -1,6 +1,6 @@
-"""Prepare one of 30 distinct daily Threads drafts; never publish it."""
+"""Prepare one of 30 distinct Threads drafts; never publish them."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from zoneinfo import ZoneInfo
 
@@ -41,7 +41,12 @@ POSTS = [
 
 def main():
     today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
-    post = POSTS[(today - datetime(2026, 10, 20).date()).days % len(POSTS)]
+    start = datetime(2026, 10, 20).date()
+    workdays_elapsed = sum(
+        1 for offset in range((today - start).days)
+        if (start + timedelta(days=offset)).weekday() < 5
+    )
+    post = POSTS[workdays_elapsed % len(POSTS)]
     print("## 今日のThreads投稿案")
     print()
     print(post)
@@ -50,9 +55,9 @@ def main():
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a", encoding="utf-8") as summary:
-            summary.write("## 今日のThreads投稿案\n\n")
-            summary.write(post + "\n\n")
-            summary.write("この投稿案は下書きです。Threadsには自動投稿されません。\n")
+            summary.write("## 今日のThreads投稿案" + chr(10) * 2)
+            summary.write(post + chr(10) * 2)
+            summary.write("この投稿案は下書きです。Threadsには自動投稿されません。" + chr(10))
 
 
 if __name__ == "__main__":
