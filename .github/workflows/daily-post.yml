@@ -1,15 +1,14 @@
-zname: 毎日のThreads投稿案
+name: 毎日のThreads投稿案
 
 on:
   schedule:
-    # 平日19:00 JST（10:00 UTC）に投稿案だけ作成
-    - cron: "0 10 * * 1-5"
-  workflow_dispatch:
+    # 月・火・木・金の19:00 JST（10:00 UTC）に投稿案だけ作成
+    - cron: "0 10 * * 1,2,4,5"
 
+  workflow_dispatch:
 
 permissions:
   contents: read
-
 
 jobs:
   draft:
