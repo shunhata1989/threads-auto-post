@@ -7,6 +7,7 @@ import urllib.parse
 import urllib.request
 
 API = "https://graph.threads.net/v1.0"
+IMAGE_BASE_URL = "https://raw.githubusercontent.com/shunhata1989/threads-auto-post/main/images/%E5%90%8D%E7%A7%B0%E6%9C%AA%E8%A8%AD%E5%AE%9A%E3%83%95%E3%82%A9%E3%83%AB%E3%82%BF%E3%82%99/"
 
 
 def api_request(method, path, params=None):
@@ -25,18 +26,23 @@ def api_request(method, path, params=None):
 
 def main():
     text = os.environ.get("POST_TEXT", "").strip()
+    image_file = os.environ.get("IMAGE_FILE", "写真なし").strip()
     image_url = os.environ.get("IMAGE_URL", "").strip()
     alt_text = os.environ.get("ALT_TEXT", "").strip()
 
     if not text:
         raise SystemExit("POST_TEXT is empty. Add the reviewed post text before running this workflow.")
+    if image_file and image_file != "写真なし":
+        if image_file != os.path.basename(image_file):
+            raise SystemExit("Choose a photo from the workflow list.")
+        image_url = IMAGE_BASE_URL + urllib.parse.quote(image_file, safe="")
     if alt_text and not image_url:
-        raise SystemExit("ALT_TEXT requires IMAGE_URL.")
+        raise SystemExit("ALT_TEXT requires a photo.")
 
     if image_url:
         parsed_url = urllib.parse.urlparse(image_url)
         if parsed_url.scheme != "https" or not parsed_url.netloc:
-            raise SystemExit("IMAGE_URL must be a publicly accessible HTTPS image URL.")
+            raise SystemExit("The photo URL must use HTTPS.")
         media = {"media_type": "IMAGE", "image_url": image_url, "text": text}
         if alt_text:
             media["alt_text"] = alt_text
