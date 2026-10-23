@@ -2,6 +2,7 @@
 
 import json
 import os
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -22,6 +23,23 @@ def api_request(method, path, params=None):
     except urllib.error.HTTPError as error:
         details = error.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"Threads API returned HTTP {error.code}: {details}") from error
+
+
+def wait_for_container(container_id, timeout=180):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        status = api_request("GET", f"{container_id}?fields=status,error_message")
+        state = status.get("status")
+        print(f"写真の準備状況: {state}")
+        if state == "FINISHED":
+            return
+        if state == "ERROR":
+            raise RuntimeError(f"Threads photo processing failed: {status.get('error_message', 'Unknown error')}")
+        time.sleep(5)
+    raise TimeoutError("Threads photo processing did not finish within 180 seconds.")
+
+
+
 
 
 def main():
@@ -51,6 +69,7 @@ def main():
 
     user = api_request("GET", "me?fields=id")
     creation = api_request("POST", f"{user['id']}/threads", media)
+    wait_for_container(creation["id"]) 
     result = api_request(
         "POST",
         f"{user['id']}/threads_publish",
