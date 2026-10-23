@@ -4,6 +4,7 @@ on:
   schedule:
     # 日・月・火・木・金の19:00 JST（10:00 UTC）に写真付きで自動投稿
     - cron: "0 10 * * 0,1,2,4,5"
+  workflow_dispatch:
 
 permissions:
   contents: read
