@@ -106,8 +106,14 @@ SUNDAY_POSTS = [
 ]
 
 
-def main():
+def main():def main():
     today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
+    if (
+        os.environ.get("SCHEDULE_CRON") == "0 3 1 1 *"
+        and today != date(2027, 1, 1)
+    ):
+        print("昼12時の特別投稿は2027年1月1日のみです。")
+        return
     if today < START_DATE:
         print("自動投稿は10月23日（金）から開始します。")
         return
@@ -131,12 +137,32 @@ def main():
             return
         post = NEW_YEAR_POST
     elif today.weekday() == 6:
-        sunday_number = sum(day.weekday() == 6 for day in scheduled_dates) - 1
-        post = SUNDAY_POSTS[sunday_number % len(SUNDAY_POSTS)]
+        if today >= date(2026, 11, 22):
+            new_sunday_number = sum(
+                day.weekday() == 6 and day >= date(2026, 11, 22)
+                for day in scheduled_dates
+            ) - 1
+            post = SUNDAY_POSTS_FROM_NOV_22[
+                new_sunday_number % len(SUNDAY_POSTS_FROM_NOV_22)
+            ]
+        else:
+            sunday_number = sum(day.weekday() == 6 for day in scheduled_dates) - 1
+            post = SUNDAY_POSTS[sunday_number % len(SUNDAY_POSTS)]
     else:
         weekday_number = sum(day.weekday() != 6 for day in scheduled_dates) - 1
-        weekday_posts = POSTS[:-1]  # Keep the Sunday opening message for Sundays.
-        post = weekday_posts[weekday_number % len(weekday_posts)]
+        if today >= date(2026, 12, 15):
+            new_weekday_number = sum(
+                day.weekday() != 6
+                and day >= date(2026, 12, 15)
+                and day not in {date(2026, 12, 31), date(2027, 1, 1)}
+                for day in scheduled_dates
+            ) - 1
+            post = WEEKDAY_POSTS_FROM_DEC_15[
+                new_weekday_number % len(WEEKDAY_POSTS_FROM_DEC_15)
+            ]
+        else:
+            weekday_posts = POSTS[:-1]  # Keep the Sunday opening message for Sundays.
+            post = weekday_posts[weekday_number % len(weekday_posts)]
 
     photo_file = PHOTO_FILES[post_number % len(PHOTO_FILES)]
     os.environ["POST_TEXT"] = post
