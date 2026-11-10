@@ -106,7 +106,7 @@ SUNDAY_POSTS = [
 ]
 
 
-def main():def main():
+def main():
     today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
     if (
         os.environ.get("SCHEDULE_CRON") == "0 3 1 1 *"
