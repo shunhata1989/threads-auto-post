@@ -2,11 +2,15 @@ name: Threadsを自動投稿
 
 on:
   schedule:
-    # 日・月・火・木・金の19:00 JST（10:00 UTC）に写真付きで自動投稿
-    - cron: "0 10 * * 0,1,2,4,5"
-    # 2027年1月1日の新年投稿を12:00 JST（03:00 UTC）に投稿
+    # 19:00〜00:00 JSTの間、毎時確認。遅延した実行の再試行と未投稿分の回収に対応
+    - cron: "0 10-15 * * *"
+    # 2027年1月1日の新年投稿を12:00 JST（03:00 UTC）に確認
     - cron: "0 3 1 1 *"
   workflow_dispatch:
+
+concurrency:
+  group: threads-auto-post
+  cancel-in-progress: false
 
 permissions:
   contents: read
