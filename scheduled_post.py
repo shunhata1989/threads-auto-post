@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from draft_post import POSTS
 from main import main as publish
+from main import api_request
 
 
 SUNDAY_POSTS_FROM_NOV_22 = [
@@ -106,51 +107,36 @@ SUNDAY_POSTS = [
 ]
 
 
-def main():
-    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
-    if (
-        os.environ.get("SCHEDULE_CRON") == "0 3 1 1 *"
-        and today != date(2027, 1, 1)
-    ):
-        print("昼12時の特別投稿は2027年1月1日のみです。")
-        return
-    if today < START_DATE:
-        print("自動投稿は10月23日（金）から開始します。")
-        return
-
-    if today.weekday() not in POST_DAYS:
-        print("今日は投稿予定日ではありません。")
-        return
-
-    scheduled_dates = [
+def scheduled_dates_through(target_date):
+    return [
         START_DATE + timedelta(days=offset)
-        for offset in range((today - START_DATE).days + 1)
+        for offset in range((target_date - START_DATE).days + 1)
         if (START_DATE + timedelta(days=offset)).weekday() in POST_DAYS
     ]
-    post_number = len(scheduled_dates) - 1
 
-    if today == date(2026, 12, 31):
+
+def post_for(post_date, scheduled_dates):
+    post_number = scheduled_dates.index(post_date)
+
+    if post_date == date(2026, 12, 31):
         post = YEAR_END_POST
-    elif today == date(2027, 1, 1):
-        if os.environ.get("SCHEDULE_CRON") == "0 10 * * 0,1,2,4,5":
-            print("1月1日の19時投稿はスキップし、新年の投稿は12時に行います。")
-            return
+    elif post_date == date(2027, 1, 1):
         post = NEW_YEAR_POST
-    elif today.weekday() == 6:
-        if today >= date(2026, 11, 22):
-            new_sunday_number = sum(
+    elif post_date.weekday() == 6:
+        if post_date >= date(2026, 11, 22):
+            sunday_number = sum(
                 day.weekday() == 6 and day >= date(2026, 11, 22)
                 for day in scheduled_dates
             ) - 1
             post = SUNDAY_POSTS_FROM_NOV_22[
-                new_sunday_number % len(SUNDAY_POSTS_FROM_NOV_22)
+                sunday_number % len(SUNDAY_POSTS_FROM_NOV_22)
             ]
         else:
             sunday_number = sum(day.weekday() == 6 for day in scheduled_dates) - 1
             post = SUNDAY_POSTS[sunday_number % len(SUNDAY_POSTS)]
     else:
         weekday_number = sum(day.weekday() != 6 for day in scheduled_dates) - 1
-        if today >= date(2026, 12, 15):
+        if post_date >= date(2026, 12, 15):
             new_weekday_number = sum(
                 day.weekday() != 6
                 and day >= date(2026, 12, 15)
@@ -161,16 +147,82 @@ def main():
                 new_weekday_number % len(WEEKDAY_POSTS_FROM_DEC_15)
             ]
         else:
-            weekday_posts = POSTS[:-1]  # Keep the Sunday opening message for Sundays.
+            weekday_posts = POSTS[:-1]
             post = weekday_posts[weekday_number % len(weekday_posts)]
 
     photo_file = PHOTO_FILES[post_number % len(PHOTO_FILES)]
-    os.environ["POST_TEXT"] = post
-    os.environ["IMAGE_FILE"] = photo_file
+    return post, photo_file
+
+
+def recent_threads():
+    user = api_request("GET", "me?fields=id")
+    result = api_request(
+        "GET",
+        f"{user['id']}/threads?fields=id,text,timestamp&limit=100",
+    )
+    return result.get("data", [])
+
+
+def thread_timestamp(thread):
+    value = thread.get("timestamp")
+    if not value:
+        return None
+    return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(
+        ZoneInfo("Asia/Tokyo")
+    )
+
+
+def main():
+    now = datetime.now(ZoneInfo("Asia/Tokyo"))
+    today = now.date()
+    if today < START_DATE:
+        print("自動投稿は10月23日（金）から開始します。")
+        return
+
+    scheduled_dates = scheduled_dates_through(today)
+    recent = recent_threads()
+    known_texts = set(POSTS[:-1]) | set(SUNDAY_POSTS) | set(SUNDAY_POSTS_FROM_NOV_22)
+    known_texts |= set(WEEKDAY_POSTS_FROM_DEC_15) | {YEAR_END_POST, NEW_YEAR_POST}
+
+    # Avoid a second automated post too soon if GitHub queued duplicate retries.
+    for thread in recent:
+        posted_at = thread_timestamp(thread)
+        if (
+            thread.get("text") in known_texts
+            and posted_at is not None
+            and timedelta(0) <= now - posted_at < timedelta(hours=6)
+        ):
+            print("直近6時間以内に自動投稿があるため、重複を避けて今回は見送ります。")
+            return
+
+    due_date = None
+    due_post = None
+    due_photo = None
+    for candidate_date in scheduled_dates:
+        candidate_post, candidate_photo = post_for(candidate_date, scheduled_dates)
+        already_posted = any(
+            thread.get("text") == candidate_post
+            and (posted_at := thread_timestamp(thread)) is not None
+            and candidate_date <= posted_at.date() <= candidate_date + timedelta(days=7)
+            for thread in recent
+        )
+        if not already_posted:
+            due_date = candidate_date
+            due_post = candidate_post
+            due_photo = candidate_photo
+            break
+
+    if due_date is None:
+        print("未投稿の予定分はありません。")
+        return
+
+    os.environ["POST_TEXT"] = due_post
+    os.environ["IMAGE_FILE"] = due_photo
     os.environ["ALT_TEXT"] = "BarEnd.で撮影したカクテルや店内の写真。"
 
-    print(f"今日の投稿文: {post}")
-    print(f"今日の写真: {photo_file}")
+    print(f"今回の予定日: {due_date.isoformat()}")
+    print(f"投稿文: {due_post}")
+    print(f"写真: {due_photo}")
     publish()
 
 
