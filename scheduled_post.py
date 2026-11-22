@@ -179,50 +179,28 @@ def main():
         print("自動投稿は10月23日（金）から開始します。")
         return
 
-    scheduled_dates = scheduled_dates_through(today)
-    recent = recent_threads()
-    known_texts = set(POSTS[:-1]) | set(SUNDAY_POSTS) | set(SUNDAY_POSTS_FROM_NOV_22)
-    known_texts |= set(WEEKDAY_POSTS_FROM_DEC_15) | {YEAR_END_POST, NEW_YEAR_POST}
-
-    # Avoid a second automated post too soon if GitHub queued duplicate retries.
-    for thread in recent:
-        posted_at = thread_timestamp(thread)
-        if (
-            thread.get("text") in known_texts
-            and posted_at is not None
-            and timedelta(0) <= now - posted_at < timedelta(hours=6)
-        ):
-            print("直近6時間以内に自動投稿があるため、重複を避けて今回は見送ります。")
-            return
-
-    due_date = None
-    due_post = None
-    due_photo = None
-    for candidate_date in scheduled_dates:
-        candidate_post, candidate_photo = post_for(candidate_date, scheduled_dates)
-        already_posted = any(
-            thread.get("text") == candidate_post
-            and (posted_at := thread_timestamp(thread)) is not None
-            and candidate_date <= posted_at.date() <= candidate_date + timedelta(days=7)
-            for thread in recent
-        )
-        if not already_posted:
-            due_date = candidate_date
-            due_post = candidate_post
-            due_photo = candidate_photo
-            break
-
-    if due_date is None:
-        print("未投稿の予定分はありません。")
+    if today.weekday() not in POST_DAYS:
+        print("今日は投稿予定日ではありません。")
         return
 
-    os.environ["POST_TEXT"] = due_post
-    os.environ["IMAGE_FILE"] = due_photo
+    recent = recent_threads()
+    if any(
+        (posted_at := thread_timestamp(thread)) is not None
+        and posted_at.date() == today
+        for thread in recent
+    ):
+        print("本日はすでにThreadsへの投稿があるため、重複を避けて今回は見送ります。")
+        return
+
+    scheduled_dates = scheduled_dates_through(today)
+    post, photo_file = post_for(today, scheduled_dates)
+    os.environ["POST_TEXT"] = post
+    os.environ["IMAGE_FILE"] = photo_file
     os.environ["ALT_TEXT"] = "BarEnd.で撮影したカクテルや店内の写真。"
 
-    print(f"今回の予定日: {due_date.isoformat()}")
-    print(f"投稿文: {due_post}")
-    print(f"写真: {due_photo}")
+    print(f"今回の予定日: {today.isoformat()}")
+    print(f"投稿文: {post}")
+    print(f"写真: {photo_file}")
     publish()
 
 
